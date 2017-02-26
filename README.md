@@ -1,158 +1,68 @@
-# relateurl [![NPM Version][npm-image]][npm-url] [![Build Status][travis-image]][travis-url] [![Dependency Status][david-image]][david-url]
+# relateurl [![NPM Version][npm-image]][npm-url] ![File Size][filesize-image] [![Build Status][travis-image]][travis-url] [![Dependency Status][david-image]][david-url]
 
-> Minify URLs by converting them from absolute to relative.
+> Create relative URLs with minify options.
 
-If you were to use this library on a website like `http://example.com/dir1/dir1-1/`, you would get results such as:
 
-| Before                                      | After                                |
-| :------------------------------------------ | :----------------------------------- |
-| `http://example.com/dir1/dir1-2/index.html` | `../dir1-2/`                         |
-| `http://example.com/dir2/dir2-1/`           | `/dir2/dir2-1/`                      |
-| `http://example.com/dir1/dir1-1/`           | ` `                                  |
-| `https://example.com/dir1/dir1-1/`          | `https://example.com/dir1/dir1-1/`   |
-| `http://google.com:80/dir/`                 | `//google.com/dir/`                  |
-| `../../../../../../../../#anchor`           | `/#anchor`                           |
+With a base URL such as `http://domain.com/dir1/dir1-1/`, you can produce:
 
-**All string parsing.** *No* directory browsing. It is thoroughly tested, very fast and lightweight with zero external dependencies.
+| Before                                     | After                             |
+| :----------------------------------------- | :-------------------------------- |
+| `http://domain.com/dir1/dir1-2/index.html` | `../dir1-2/`                      |
+| `http://domain.com/dir2/dir2-1/`           | `/dir2/dir2-1/`                   |
+| `http://domain.com/dir1/dir1-1/`           | ` `                               |
+| `httpS://domain.com/dir1/dir1-1/`          | `https://domain.com/dir1/dir1-1/` |
+| `http://google.com:80/`                    | `//google.com`                    |
+| `../../../../../../../../#anchor`          | `/#anchor`                        |
 
-## Getting Started
 
-This utility requires [Node.js](http://nodejs.org/) `>= 0.10`. To install, type this at the command line:
-```
-npm install relateurl --save-dev
+## Installation
+
+[Node.js](http://nodejs.org/) `>= 4` is required. To install, type this at the command line:
+```shell
+npm install relateurl
 ```
 
 ### Options
 
-#### options.defaultPorts
-Type: `Object`   
-Default value: `{ftp:21, http:80, https:443}`  
+### `options.optionName`
+Type: `Type`  
+Default value: `defaultValue`  
+Description.
 
-Extend the list with any ports you need. Any URLs containing these default ports will have them removed. Example: `http://example.com:80/` will become `http://example.com/`.
 
-#### options.directoryIndexes
-Type: `Array`   
-Default value: `["index.html"]`  
+* `deepQuery`; passed to [`relation()`](#relationurl1-url2-options). Default value: `true`.
+* `output`; possible values:
+  * `relativeUrl.PROTOCOL_RELATIVE` will try to produce something like `//domain.com/path/to/file.html`.
+  * `relativeUrl.ROOT_PATH_RELATIVE` will try to produce something like `/child-of-root/etc/`.
+  * `relativeUrl.SHORTEST` will try to produce the shortest possible, which may be either of the two above or something more terse. If `from` and `to` each resolve to the same path, an empty URL will be produced.
+  * Default value: `relateUrl.SHORTEST`
+* `removeEmptyHash`; passed to [`minify()`](#minifyurl-options). Default value: `Function`.
+* any other option is passed to [`minify()`](#minifyurl-options)
 
-Extend the list with any resources you need. Works with [`options.removeDirectoryIndexes`](#options.removeDirectoryIndexes).
+`relative.DEFAULT_OPTIONS` is also available for using default functionality in custom configurations.
 
-#### options.ignore_www
-Type: `Boolean`  
-Default value: `false`  
 
-This will, for example, consider any domains containing `http://www.example.com/` to be related to any that contain `http://example.com/`.
+### Default Options
 
-#### options.output
-Type: constant or `String`  
-Choices: `RelateUrl.ABSOLUTE`,`RelateUrl.PATH_RELATIVE`,`RelateUrl.ROOT_RELATIVE`,`RelateUrl.SHORTEST`  
-Choices: `"absolute"`,`"pathRelative"`,`"rootRelative"`,`"shortest"`  
-Default value: `RelateUrl.SHORTEST`  
+`relateUrl.DEFAULT_OPTIONS` is also available for using default functionality in custom configurations.
 
-`RelateUrl.ABSOLUTE` will produce an absolute URL. Overrides [`options.schemeRelative`](#options.schemeRelative) with a value of `false`.  
-`RelateUrl.PATH_RELATIVE` will produce something like `../child-of-parent/etc/`.  
-`RelateUrl.ROOT_RELATIVE` will produce something like `/child-of-root/etc/`.  
-`RelateUrl.SHORTEST` will choose whichever is shortest between root- and path-relative.  
 
-#### options.rejectedSchemes
-Type: `Array`   
-Default value: `["data","javascript","mailto"]`  
+### Function as an Option
 
-Extend the list with any additional schemes. Example: `javascript:something` will not be modified.
-
-#### options.removeAuth
-Type: `Boolean`   
-Default value: `false`  
-
-Remove user authentication information from the output URL.
-
-#### options.removeDirectoryIndexes
-Type: `Boolean`   
-Default value: `true`  
-
-Remove any resources that match any found in [`options.directoryIndexes`](#options.directoryIndexes).
-
-#### options.removeEmptyQueries
-Type: `Boolean`   
-Default value: `false`  
-
-Remove empty query variables. Example: `http://domain.com/?var1&var2=&var3=asdf` will become `http://domain.com/?var3=adsf`. This does not apply to unrelated URLs (with other protocols, auths, hosts and/or ports).
-
-#### options.removeRootTrailingSlash
-Type: `Boolean`   
-Default value: `true`  
-
-Remove trailing slashes from root paths. Example: `http://domain.com/?var` will become `http://domain.com?var` while `http://domain.com/dir/?var` will not be modified.
-
-#### options.schemeRelative
-Type: `Boolean`   
-Default value: `true`  
-
-Output URLs relative to the scheme. Example: `http://example.com/` will become `//example.com/`.
-
-#### options.site
-Type: `String`   
-Default value: `undefined`  
-
-An options-based version of the [`from`](#examples) argument. If both are specified, `from` takes priority.
-
-#### options.slashesDenoteHost
-Type: `Boolean`   
-Default value: `true`  
-
-Passed to Node's [`url.parse`](http://nodejs.org/api/url.html#url_url_parse_urlstr_parsequerystring_slashesdenotehost).
-
-### Examples
-This library can be used as a [function for single-use](#single-instance) or as a [class for multiple conversions](#reusable-instances).
-
-Upon successful conversion, a `String` will be returned. If an issue is encountered while parsing `from`, an error will be thrown.
-
-#### Single Instance
+When an option is defined as a `Function`, it must return `true` to be included in the custom filter:
 ```js
-var RelateUrl = require("relateurl");
-
-var result = RelateUrl.relate(from, to, options);
+const options = {
+  removeDirectoryIndex: function(url) {
+    // Only URLs with these protocols will have their directory indexes removed
+    return url.protocol === 'http:' && url.protocol === 'http:';
+  }
+};
 ```
-
-#### Reusable Instances
-```js
-var RelateUrl = require("relateurl");
-
-var instance = new RelateUrl(from, options);
-
-var result1 = instance.relate(to1);
-var result2 = instance.relate(to2, customOptions);
-var result3 = instance.relate(to3);
-```
-
-## FAQ
-1. **Why bother writing/using this?**  
-To aid in further minifying HTML, mainly for the purpose of faster page loads and SEO. It's been integrated into [HTMLMinifier](https://github.com/kangax/html-minifier).
-
-2. **Why not just use Node's `url.parse`, `url.resolve` and `path.relative`?**  
-`url.parse` *is* used, but `url.resolve` and `path.relative` are both slower and less powerful than this library.
-
-
-## Release History
-* 0.2.7 Node v6 support
-* 0.2.6 minor enhancements
-* 0.2.5 added `options.removeRootTrailingSlash`
-* 0.2.4 added `options.site`
-* 0.2.3 added browserify npm-script
-* 0.2.2 removed task runner
-* 0.2.1 shorten resource- and query-relative URLs, test variations list with other site URLs
-* 0.2.0 code cleanup, `options.removeEmptyQueries=true` only applied to unrelated URLs
-* 0.1.0 initial release
-
-
-## Roadmap
-* 0.2.8 check if queries are the same, regardless of param order
-* 0.2.8 possible [scheme exclusions](http://www.iana.org/assignments/uri-schemes/uri-schemes.xhtml) such as `tel:`
-* 0.2.8 decipher and return invalid input (special cases) to complete test suite
-* 0.3.0 test `options.slashesDenoteHost=false`, add something like `options.externalDirectoryIndexes=[]` for external sites
 
 
 [npm-image]: https://img.shields.io/npm/v/relateurl.svg
 [npm-url]: https://npmjs.org/package/relateurl
+[filesize-image]: https://img.shields.io/badge/size-5.5kB%20gzipped-blue.svg
 [travis-image]: https://img.shields.io/travis/stevenvachon/relateurl.svg
 [travis-url]: https://travis-ci.org/stevenvachon/relateurl
 [david-image]: https://img.shields.io/david/stevenvachon/relateurl.svg
