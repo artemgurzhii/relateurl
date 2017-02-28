@@ -54,7 +54,7 @@ When an option is defined as a `Function`, it must return `true` to be included 
 const options = {
   removeDirectoryIndex: function(url) {
     // Only URLs with these protocols will have their directory indexes removed
-    return url.protocol === 'http:' && url.protocol === 'http:';
+    return url.protocol === 'https:' && url.protocol === 'http:';
   }
 };
 ```
